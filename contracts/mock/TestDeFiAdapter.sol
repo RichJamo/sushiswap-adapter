@@ -7,6 +7,7 @@ import { ERC20 } from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import { IAdapterFull } from "@optyfi/defi-legos/interfaces/defiAdapters/contracts/IAdapterFull.sol";
 
 import { MultiCall } from "../utils/MultiCall.sol";
+import "hardhat/console.sol";
 
 ///////////////////////////////////////
 /// THIS CONTRACTS MOCKS AS A VAULT ///
@@ -22,10 +23,12 @@ contract TestDeFiAdapter is MultiCall {
         address _liquidityPool,
         address _adapter
     ) external {
+        console.log("about to execute codes");
         executeCodes(
             IAdapterFull(_adapter).getDepositAllCodes(payable(address(this)), _underlyingToken, _liquidityPool),
             "depositAll"
         );
+        console.log("made it to end of testGetDepositAllCodes");
     }
 
     function testGetDepositSomeCodes(

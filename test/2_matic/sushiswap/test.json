@@ -1,0 +1,10 @@
+{
+  "kmAAVE/DAI-LINK": {
+    "vault": "0x99c0fbdf5b56bada277fbd407211c8add58c25e0",
+    "wantToken": "0x8f3cf7ad23cd3cadbd9735aff958023239c6a063"
+  },
+  "kmAAVE/LINK-LINK": {
+    "vault": "0x8757df3db2e7419b81e5032f4e395e3782ec89fc",
+    "wantToken": "0x53e0bca35ec356bd5dddfebbd1fc0fd03fabad39"
+  }
+}
