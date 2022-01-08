@@ -12,6 +12,8 @@ export function shouldBehaveLikeSushiswapAdapter(token: string, pool: PoolItem):
   it(`should deposit ${token} and withdraw f${token} in ${token} lending pair of Kashi - Sushiswap`, async function () {
     console.log("this.testDeFiAdapter.address");
     console.log(this.testDeFiAdapter.address);
+    console.log(this.signers.admin.address);
+    console.log(this.sushiswapAdapter.address);
 
     // Sushiswap's deposit vault instance
     const sushiswapDepositInstance = await hre.ethers.getContractAt("ISushiswapDeposit", pool.vault);

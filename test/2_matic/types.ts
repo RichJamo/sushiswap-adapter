@@ -3,7 +3,7 @@ import { Fixture } from "ethereum-waffle";
 import { SushiswapAdapter } from "../../typechain/SushiswapAdapter";
 import { IUniswapV2Router02 } from "../../typechain/IUniswapV2Router02";
 import { TestDeFiAdapter } from "../../typechain/TestDeFiAdapter";
-
+import { BentoBoxV1 } from "../../../typechain/BentoBoxV1";
 export interface Signers {
   admin: SignerWithAddress;
   owner: SignerWithAddress;
@@ -32,6 +32,7 @@ declare module "mocha" {
     sushiswapAdapter: SushiswapAdapter;
     testDeFiAdapter: TestDeFiAdapter;
     uniswapV2Router02: IUniswapV2Router02;
+    bentoBoxV1: BentoBoxV1;
     loadFixture: <T>(fixture: Fixture<T>) => Promise<T>;
     signers: Signers;
   }

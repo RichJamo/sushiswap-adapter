@@ -2,7 +2,7 @@
 // License-Identifier: MIT
 
 pragma solidity ^0.6.12;
-import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import { IERC20_ } from "../../utils/interfaces/IERC20_.sol";
 
 interface IBentoBoxV1 {
     // event LogDeploy(address indexed masterContract, bytes data, address indexed cloneAddress);
@@ -22,14 +22,14 @@ interface IBentoBoxV1 {
     // event LogWithdraw(address indexed token, address indexed from, address indexed to, uint256 amount, uint256 share);
     // event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
 
-    // function balanceOf(IERC20, address) external view returns (uint256);
+    // function balanceOf(IERC20_, address) external view returns (uint256);
 
     // function batch(bytes[] calldata calls, bool revertOnFail) external payable returns (bool[] memory successes, bytes[] memory results);
 
     // function batchFlashLoan(
     //     IBatchFlashBorrower borrower,
     //     address[] calldata receivers,
-    //     IERC20[] calldata tokens,
+    //     IERC20_[] calldata tokens,
     //     uint256[] calldata amounts,
     //     bytes calldata data
     // ) external;
@@ -43,7 +43,7 @@ interface IBentoBoxV1 {
     // ) external payable;
 
     // function deposit(
-    //     IERC20 token_,
+    //     IERC20_ token_,
     //     address from,
     //     address to,
     //     uint256 amount,
@@ -53,13 +53,13 @@ interface IBentoBoxV1 {
     // function flashLoan(
     //     IFlashBorrower borrower,
     //     address receiver,
-    //     IERC20 token,
+    //     IERC20_ token,
     //     uint256 amount,
     //     bytes calldata data
     // ) external;
 
     // function harvest(
-    //     IERC20 token,
+    //     IERC20_ token,
     //     bool balance,
     //     uint256 maxChangeAmount
     // ) external;
@@ -74,10 +74,10 @@ interface IBentoBoxV1 {
 
     // function pendingOwner() external view returns (address);
 
-    // function pendingStrategy(IERC20) external view returns (IStrategy);
+    // function pendingStrategy(IERC20_) external view returns (IStrategy);
 
     // function permitToken(
-    //     IERC20 token,
+    //     IERC20_ token,
     //     address from,
     //     address to,
     //     uint256 amount,
@@ -98,13 +98,13 @@ interface IBentoBoxV1 {
         bytes32 s
     ) external;
 
-    // function setStrategy(IERC20 token, IStrategy newStrategy) external;
+    // function setStrategy(IERC20_ token, IStrategy newStrategy) external;
 
-    // function setStrategyTargetPercentage(IERC20 token, uint64 targetPercentage_) external;
+    // function setStrategyTargetPercentage(IERC20_ token, uint64 targetPercentage_) external;
 
-    // function strategy(IERC20) external view returns (IStrategy);
+    // function strategy(IERC20_) external view returns (IStrategy);
 
-    // function strategyData(IERC20)
+    // function strategyData(IERC20_)
     //     external
     //     view
     //     returns (
@@ -114,28 +114,28 @@ interface IBentoBoxV1 {
     //     );
 
     // function toAmount(
-    //     IERC20 token,
+    //     IERC20_ token,
     //     uint256 share,
     //     bool roundUp
     // ) external view returns (uint256 amount);
 
     // function toShare(
-    //     IERC20 token,
+    //     IERC20_ token,
     //     uint256 amount,
     //     bool roundUp
     // ) external view returns (uint256 share);
 
-    // function totals(IERC20) external view returns (Rebase memory totals_);
+    // function totals(IERC20_) external view returns (Rebase memory totals_);
 
     // function transfer(
-    //     IERC20 token,
+    //     IERC20_ token,
     //     address from,
     //     address to,
     //     uint256 share
     // ) external;
 
     // function transferMultiple(
-    //     IERC20 token,
+    //     IERC20_ token,
     //     address from,
     //     address[] calldata tos,
     //     uint256[] calldata shares
@@ -152,7 +152,7 @@ interface IBentoBoxV1 {
     // function whitelistedMasterContracts(address) external view returns (bool);
 
     // function withdraw(
-    //     IERC20 token_,
+    //     IERC20_ token_,
     //     address from,
     //     address to,
     //     uint256 amount,

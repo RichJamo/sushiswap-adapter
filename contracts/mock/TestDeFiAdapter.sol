@@ -5,12 +5,13 @@ pragma experimental ABIEncoderV2;
 
 import { ERC20 } from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import { IAdapterFull } from "@optyfi/defi-legos/interfaces/defiAdapters/contracts/IAdapterFull.sol";
+import "../utils/interfaces/IBentoBoxV1.sol";
 
 import { MultiCall } from "../utils/MultiCall.sol";
 import "hardhat/console.sol";
 
 ///////////////////////////////////////
-/// THIS CONTRACTS MOCKS AS A VAULT ///
+/// THIS CONTRACT MOCKS AS A VAULT ///
 ///////////////////////////////////////
 
 ////////////////////////////////
@@ -18,12 +19,30 @@ import "hardhat/console.sol";
 ////////////////////////////////
 
 contract TestDeFiAdapter is MultiCall {
+    address public constant bentoBoxAddress = address(0x0319000133d3AdA02600f0875d2cf03D442C3367);
+
+    address public constant kashiMasterContract = address(0xB527C5295c4Bc348cBb3a2E96B2494fD292075a7);
+
+    function approveKashiMasterContract() external {
+        IBentoBoxV1 bentoBox = IBentoBoxV1(bentoBoxAddress);
+
+        bentoBox.setMasterContractApproval(
+            address(this),
+            kashiMasterContract,
+            true,
+            0,
+            bytes32(0),
+            bytes32(0) //0x0000000000000000000000000000000000000000000000000000000000000000
+        );
+    }
+
     function testGetDepositAllCodes(
         address _underlyingToken,
         address _liquidityPool,
         address _adapter
     ) external {
         console.log("about to execute codes");
+        console.log(msg.sender);
         executeCodes(
             IAdapterFull(_adapter).getDepositAllCodes(payable(address(this)), _underlyingToken, _liquidityPool),
             "depositAll"
