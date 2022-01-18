@@ -176,24 +176,6 @@ contract SushiswapAdapter is IAdapter, IAdapterHarvestReward, IAdapterInvestLimi
     /**
      * @inheritdoc IAdapter
      */
-    // function getDepositSomeCodes(
-    //     address payable,
-    //     address _underlyingToken,
-    //     address _liquidityPool,
-    //     uint256 _amount
-    // ) public view override returns (bytes[] memory _codes) {
-    //     if (_amount > 0) {
-    //         _codes = new bytes[](1);
-    //         _codes[0] = abi.encode(_liquidityPool, abi.encodeWithSignature("cook(uint8[],uint256[],bytes[])",));
-
-    //         _codes[1] = abi.encode(_liquidityPool, abi.encodeWithSignature("addAsset(address,bool,uint256)",address(this), true, 999));
-
-    //     }
-    // }
-
-    /**
-     * @inheritdoc IAdapter
-     */
     function getDepositSomeCodes(
         address payable,
         address _underlyingToken,
@@ -238,19 +220,19 @@ contract SushiswapAdapter is IAdapter, IAdapterHarvestReward, IAdapterInvestLimi
         address _liquidityPool,
         uint256 _shares //is really fraction in this case - still comes from balanceOf
     ) public view override returns (bytes[] memory _codes) {
-        uint8[] memory actionsArray = new uint8[](1);
+        uint8[] memory actionsArray = new uint8[](2);
         actionsArray[0] = 3; //ACTION_REMOVE_ASSET
-        // actionsArray[1] = 21; //ACTION_BENTO_WITHDRAW
+        actionsArray[1] = 21; //ACTION_BENTO_WITHDRAW
 
-        uint256[] memory valuesArray = new uint256[](1);
+        uint256[] memory valuesArray = new uint256[](2);
         valuesArray[0] = 0;
-        // valuesArray[1] = 0;
+        valuesArray[1] = 0;
 
-        bytes[] memory datasArray = new bytes[](1);
+        bytes[] memory datasArray = new bytes[](2);
         console.log(_shares); //.sub(10000)
         datasArray[0] = abi.encode(int256(_shares), address(msg.sender)); //fraction, to; int256, address; returns share .sub(10000)
         //token, to, amount, share; IERC20, address, int256, int256
-        // datasArray[1] = abi.encode(IERC20(_underlyingToken),address(msg.sender),0, int256(-1));
+        datasArray[1] = abi.encode(IERC20(_underlyingToken), address(msg.sender), 0, int256(-1));
 
         if (_shares > 0) {
             _codes = new bytes[](1);
@@ -310,23 +292,14 @@ contract SushiswapAdapter is IAdapter, IAdapterHarvestReward, IAdapterInvestLimi
         address _liquidityPool,
         uint256 _liquidityPoolTokenAmount
     ) public view override returns (uint256) {
-        (uint128 totalAssetElastic, ) = IKashiLendingPair(_liquidityPool).totalAsset();
-        (uint128 totalBorrowElastic, ) = IKashiLendingPair(_liquidityPool).totalBorrow();
-        // console.log(totalAssetElastic);
-        // console.log(totalBorrowElastic);
-        // console.log(_liquidityPoolTokenAmount);
-        // console.log(IKashiLendingPair(_liquidityPool).totalSupply());
+        (uint128 totalAssetElastic, uint128 totalAssetBase) = IKashiLendingPair(_liquidityPool).totalAsset();
 
         if (_liquidityPoolTokenAmount > 0) {
-            _liquidityPoolTokenAmount = _liquidityPoolTokenAmount
-                .mul(
-                    IBentoBoxV1(bentoBox).toAmount(IERC20_(_underlyingToken), totalAssetElastic, false).add(
-                        totalBorrowElastic
-                    )
-                )
-                .div(IKashiLendingPair(_liquidityPool).totalSupply());
-            //.mul(10**18) //.mul(10**IKashiLendingPair(_liquidityPool).decimals())
-            //.div(10**18) //div(10**IKashiLendingPair(_liquidityPool).decimals())
+            _liquidityPoolTokenAmount = IBentoBoxV1(bentoBox).toAmount(
+                IERC20_(_underlyingToken),
+                _liquidityPoolTokenAmount.mul(totalAssetElastic).div(totalAssetBase), //these three lines could be a PricePerFraction function?
+                false
+            );
         }
         return _liquidityPoolTokenAmount;
     }

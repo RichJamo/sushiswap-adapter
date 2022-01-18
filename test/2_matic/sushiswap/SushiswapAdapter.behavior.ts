@@ -12,6 +12,9 @@ export function shouldBehaveLikeSushiswapAdapter(token: string, pool: PoolItem):
   it(`should deposit ${token} and withdraw f${token} in ${token} lending pair of Kashi - Sushiswap`, async function () {
     // Sushiswap's deposit vault instance
     const kashiLendingPairInstance = await hre.ethers.getContractAt("IKashiLendingPair", pool.vault);
+    const totalSupply = await kashiLendingPairInstance.totalSupply();
+    if (totalSupply == 0) this.skip(); //skip vaults which are empty - it's not possible to get money out again fully (perhaps even skip small vaults?)
+
     let bentoboxAddress = "0x0319000133d3AdA02600f0875d2cf03D442C3367";
     const bentoBoxInstance = await hre.ethers.getContractAt("IBentoBoxV1", bentoboxAddress);
     let wmatic_address = "0x0d500B1d8E8eF31E21C99d1Db9A6444d3ADf1270";
@@ -27,7 +30,8 @@ export function shouldBehaveLikeSushiswapAdapter(token: string, pool: PoolItem):
     //if wantToken is WMATIC, wrap MATIC into WMATIC
     if (hre.ethers.utils.getAddress(wantTokenAddress) == hre.ethers.utils.getAddress(wmatic_address)) {
       console.log("want is wmatic");
-      await underlyingTokenInstance.deposit({ value: hre.ethers.utils.parseEther("50") });
+      const wmatic_token = await hre.ethers.getContractAt("IWETH", wantTokenAddress);
+      await wmatic_token.deposit({ value: hre.ethers.utils.parseEther("50") });
       console.log("swap into wmatic done");
     } else {
       //if wantToken is not WMATIC, swap from MATIC into wantToken
@@ -62,7 +66,6 @@ export function shouldBehaveLikeSushiswapAdapter(token: string, pool: PoolItem):
     console.log("tokenBalanceInTestAdapter");
     console.log(hre.ethers.utils.formatEther(tokenBalanceInTestAdapter));
 
-    const totalSupply = await kashiLendingPairInstance.totalSupply();
     console.log("totalSupply");
     console.log(hre.ethers.utils.formatEther(totalSupply));
 
@@ -103,44 +106,36 @@ export function shouldBehaveLikeSushiswapAdapter(token: string, pool: PoolItem):
 
     expect(actualUnderlyingTokenBalanceAfterDeposit).to.be.eq(expectedUnderlyingTokenBalanceAfterDeposit);
 
-    // // 1.3 assert whether the amount in token is as expected or not after depositing
-    // const actualAmountInTokenAfterDeposit = await this.sushiswapAdapter.getAllAmountInToken(
-    //   this.testDeFiAdapter.address,
-    //   pool.wantToken,
-    //   pool.vault,
-    // );
-    // console.log("actualAmountInTokenAfterDeposit");
-    // console.log(hre.ethers.utils.formatEther(actualAmountInTokenAfterDeposit));
+    // 1.3 assert whether the amount in token is as expected or not after depositing
+    const actualAmountInTokenAfterDeposit = await this.sushiswapAdapter.getAllAmountInToken(
+      this.testDeFiAdapter.address,
+      pool.wantToken,
+      pool.vault,
+    );
+    console.log("actualAmountInTokenAfterDeposit");
+    console.log(hre.ethers.utils.formatEther(actualAmountInTokenAfterDeposit));
 
-    // //to do - fix this line below - need to do
-    // let totalAsset = await kashiLendingPairInstance.totalAsset();
-    // let totalBorrow = await kashiLendingPairInstance.totalBorrow();
-    // let totalAssetElastic = totalAsset[0];
-    // let totalBorrowElastic = totalBorrow[0];
-    //   console.log(hre.ethers.utils.formatUnits(totalAssetElastic));
-    //   console.log(hre.ethers.utils.formatUnits(totalBorrowElastic));
-    //   console.log(hre.ethers.utils.formatUnits(expectedLPTokenBalanceAfterDeposit));
-    //   console.log(hre.ethers.utils.formatUnits(await kashiLendingPairInstance.totalSupply()))
-    //   console.log(hre.ethers.utils.formatUnits(await bentoBoxInstance.toAmount(pool.wantToken, totalAssetElastic, false)))
+    //to do - fix this line below - need to do
+    let totalAsset = await kashiLendingPairInstance.totalAsset();
+    let totalAssetElastic = totalAsset[0];
+    let totalAssetBase = totalAsset[1];
 
-    // const pricePerFraction = (
-    //   (await bentoBoxInstance.toAmount(pool.wantToken, totalAssetElastic, false))
-    //   .add(totalBorrowElastic)
-    //   )
-    // .mul(10**12)
-    // .div(await kashiLendingPairInstance.totalSupply())
-    // .div(10**12);
+    const pricePerFraction = await bentoBoxInstance.toAmount(
+      pool.wantToken,
+      totalAssetElastic.div(totalAssetBase),
+      false,
+    );
 
-    // //await kashiLendingPairInstance.getPricePerFullShare();
-    // console.log("pricePerFraction");
-    // console.log(pricePerFraction);
+    const expectedAmountInTokenAfterDeposit = await bentoBoxInstance.toAmount(
+      pool.wantToken,
+      expectedLPTokenBalanceAfterDeposit.mul(totalAssetElastic).div(totalAssetBase),
+      false,
+    );
 
-    // const expectedAmountInTokenAfterDeposit = BigNumber.from(expectedLPTokenBalanceAfterDeposit)
-    //   .mul(pricePerFraction)
-    // console.log("expectedAmountInTokenAfterDeposit");
-    // console.log(hre.ethers.utils.formatEther(expectedAmountInTokenAfterDeposit));
+    console.log("expectedAmountInTokenAfterDeposit");
+    console.log(hre.ethers.utils.formatEther(expectedAmountInTokenAfterDeposit));
 
-    // expect(actualAmountInTokenAfterDeposit).to.be.eq(expectedAmountInTokenAfterDeposit);
+    expect(actualAmountInTokenAfterDeposit).to.be.eq(expectedAmountInTokenAfterDeposit);
 
     // 2. Withdraw all token balance
     console.log("withdraw amount");
