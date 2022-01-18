@@ -14,15 +14,57 @@ export function shouldBehaveLikeSushiswapAdapter(token: string, pool: PoolItem):
     const kashiLendingPairInstance = await hre.ethers.getContractAt("IKashiLendingPair", pool.vault);
     let bentoboxAddress = "0x0319000133d3AdA02600f0875d2cf03D442C3367";
     const bentoBoxInstance = await hre.ethers.getContractAt("IBentoBoxV1", bentoboxAddress);
+    let wmatic_address = "0x0d500B1d8E8eF31E21C99d1Db9A6444d3ADf1270";
 
     // Sushiswap receipt token decimals
     // const decimals = await kashiLendingPairInstance.decimals();
 
+    const wantTokenAddress = pool.wantToken;
     // Sushiswap's underlying token instance
-    const underlyingTokenInstance = await hre.ethers.getContractAt("IERC20", pool.wantToken);
+    const underlyingTokenInstance = await hre.ethers.getContractAt("IERC20", wantTokenAddress);
+
+    // fund TestDeFiAdapter with initialWantTokenBalance
+    //if wantToken is WMATIC, wrap MATIC into WMATIC
+    if (hre.ethers.utils.getAddress(wantTokenAddress) == hre.ethers.utils.getAddress(wmatic_address)) {
+      console.log("want is wmatic");
+      await underlyingTokenInstance.deposit({ value: hre.ethers.utils.parseEther("50") });
+      console.log("swap into wmatic done");
+    } else {
+      //if wantToken is not WMATIC, swap from MATIC into wantToken
+      console.log("want is not wmatic");
+      try {
+        await this.swapRouter.swapExactETHForTokens(
+          0,
+          [wmatic_address, wantTokenAddress],
+          this.signers.admin.address,
+          Date.now() + 900,
+          { value: hre.ethers.utils.parseEther("50") },
+        );
+        console.log("Swap into single test asset done");
+      } catch (err) {
+        console.log("Swap into single test asset failed");
+        console.log(err);
+      }
+    }
+
+    //get balance of wantToken
+    const initialWantTokenBalance = await underlyingTokenInstance.balanceOf(this.signers.admin.address);
+    console.log("initialWantTokenBalance");
+    console.log(hre.ethers.utils.formatEther(initialWantTokenBalance));
+
+    //transfer want to testDeFiAdapter
+    await underlyingTokenInstance.transfer(this.testDeFiAdapter.address, initialWantTokenBalance, getOverrideOptions());
+    const testDefiAdapterWantBalance = await underlyingTokenInstance.balanceOf(this.testDeFiAdapter.address);
+    console.log("testDefiAdapterWantBalance");
+    console.log(hre.ethers.utils.formatEther(testDefiAdapterWantBalance));
+
     const tokenBalanceInTestAdapter = await underlyingTokenInstance.balanceOf(this.testDeFiAdapter.address);
     console.log("tokenBalanceInTestAdapter");
     console.log(hre.ethers.utils.formatEther(tokenBalanceInTestAdapter));
+
+    const totalSupply = await kashiLendingPairInstance.totalSupply();
+    console.log("totalSupply");
+    console.log(hre.ethers.utils.formatEther(totalSupply));
 
     // 1. deposit all underlying tokens
     await this.testDeFiAdapter.testGetDepositAllCodes(

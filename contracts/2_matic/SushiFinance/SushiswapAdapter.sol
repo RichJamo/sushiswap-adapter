@@ -247,8 +247,8 @@ contract SushiswapAdapter is IAdapter, IAdapterHarvestReward, IAdapterInvestLimi
         // valuesArray[1] = 0;
 
         bytes[] memory datasArray = new bytes[](1);
-        console.log(_shares.sub(10000));
-        datasArray[0] = abi.encode(int256(_shares.sub(10000)), address(msg.sender)); //fraction, to; int256, address; returns share
+        console.log(_shares); //.sub(10000)
+        datasArray[0] = abi.encode(int256(_shares), address(msg.sender)); //fraction, to; int256, address; returns share .sub(10000)
         //token, to, amount, share; IERC20, address, int256, int256
         // datasArray[1] = abi.encode(IERC20(_underlyingToken),address(msg.sender),0, int256(-1));
 
