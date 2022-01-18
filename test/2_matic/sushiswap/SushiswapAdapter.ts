@@ -8,7 +8,7 @@ import { BentoBoxV1 } from "../../../typechain/BentoBoxV1";
 
 import { LiquidityPool, Signers } from "../types";
 import { shouldBehaveLikeSushiswapAdapter } from "./SushiswapAdapter.behavior";
-import { default as SushiswapLendingPairs } from "./test.json";
+import { default as SushiswapLendingPairs } from "./sushiswap_kashi_pairs.json";
 import { IUniswapV2Router02 } from "../../../typechain";
 import { getOverrideOptions } from "../../utils";
 
@@ -26,19 +26,12 @@ describe("Unit tests", function () {
     this.signers.alice = signers[3];
 
     let wmatic_address = "0x0d500B1d8E8eF31E21C99d1Db9A6444d3ADf1270";
-    // const weth_token = await hre.ethers.getContractAt("IERC20", wmatic_address);
     let masterContractAddress = "0xb527c5295c4bc348cbb3a2e96b2494fd292075a7"; //"0x99c0fbdf5b56bada277fbd407211c8add58c25e0";
-    let bentoboxAddress = "0x0319000133d3AdA02600f0875d2cf03D442C3367";
 
-    // hre.ethers.utils.defaultAbiCoder.encode(["address", "address", "int256", "int256"], [_underlyingToken, msg.sender, _amount, 0])
-
-    // let stringExample = hre.ethers.utils.defaultAbiCoder.encode(["string"], ["AAAA"]);
-    // console.log(stringExample);
     // get the UniswapV2Router contract instance
     this.swapRouter = <IUniswapV2Router02>(
       await hre.ethers.getContractAt("IUniswapV2Router02", "0xa5E0829CaCEd8fFDD4De3c43696c57F7D7A678ff") //Quickswap router 0xa5...
     );
-    // this.swapRouter = <IUniswapV2Router02>await hre.ethers.getContractAt("IUniswapV2Router02", swapRouterAddress); //changed this to polygon apeswap router
 
     // deploy Sushiswap Adapter
     const sushiswapAdapterArtifact: Artifact = await hre.artifacts.readArtifact("SushiswapAdapter");
@@ -52,31 +45,12 @@ describe("Unit tests", function () {
       await deployContract(this.signers.deployer, testDeFiAdapterArtifact, [], getOverrideOptions())
     );
 
+    // approve KashiMasterContract to spend TestDefiAdaptor's tokens
     this.testDeFiAdapter.approveKashiMasterContract(); //NB this would need to be done for the actual adaptor later on!!
-
-    // deploy Bentobox Contract
-    // const bentoBoxArtifact: Artifact = await hre.artifacts.readArtifact("BentoBoxV1");
-    // this.bentoBoxV1 = <BentoBoxV1>(
-    //   await deployContract(this.signers.deployer, bentoBoxArtifact, [(wmatic_address)], getOverrideOptions()) //should this be just the address (wmatic_address) or should it be an ERC20?
-    // );
-    // console.log("deployed");
-    // deploy Bentobox Contract
-    this.bentobox = await hre.ethers.getContractAt("IBentoBoxV1", bentoboxAddress);
-    //   console.log("got to here")
-    // //todo: need to set master contract approval for bentobox here!! why is it working without this??? It's not, but it's not reverting...
-    // await this.bentobox.connect(this.sushiswapAdapter).setMasterContractApproval( //.connect(this.testDeFiAdapter)
-    //   this.sushiswapAdapter.address,
-    //   masterContractAddress,
-    //   true,
-    //   0,
-    //   "0x0000000000000000000000000000000000000000000000000000000000000000",
-    //   "0x0000000000000000000000000000000000000000000000000000000000000000"); //hre.ethers.utils.formatBytes32String("0")
-    // console.log("and then got to here")
 
     // fund TestDeFiAdapter with initialWantTokenBalance
     for (const pool of Object.values(SushiswapLendingPairs)) {
       const wantTokenAddress = pool.wantToken;
-      console.log(wantTokenAddress);
       //if wantToken is WMATIC, wrap MATIC into WMATIC
       if (wantTokenAddress == hre.ethers.utils.getAddress(wmatic_address)) {
         console.log("want is wmatic");
@@ -103,12 +77,14 @@ describe("Unit tests", function () {
 
       //get balance of wantToken
       const initialWantTokenBalance = await WANT_TOKEN_CONTRACT.balanceOf(this.signers.admin.address);
-      console.log(initialWantTokenBalance);
+      console.log("initialWantTokenBalance");
+      console.log(hre.ethers.utils.formatEther(initialWantTokenBalance));
 
       //transfer want to testDeFiAdapter
       await WANT_TOKEN_CONTRACT.transfer(this.testDeFiAdapter.address, initialWantTokenBalance, getOverrideOptions());
       const testDefiAdapterWantBalance = await WANT_TOKEN_CONTRACT.balanceOf(this.testDeFiAdapter.address);
-      console.log(testDefiAdapterWantBalance);
+      console.log("testDefiAdapterWantBalance");
+      console.log(hre.ethers.utils.formatEther(testDefiAdapterWantBalance));
     }
   });
 

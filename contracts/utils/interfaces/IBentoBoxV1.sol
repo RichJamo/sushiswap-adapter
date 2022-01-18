@@ -113,11 +113,11 @@ interface IBentoBoxV1 {
     //         uint128 balance
     //     );
 
-    // function toAmount(
-    //     IERC20_ token,
-    //     uint256 share,
-    //     bool roundUp
-    // ) external view returns (uint256 amount);
+    function toAmount(
+        IERC20_ token,
+        uint256 share,
+        bool roundUp
+    ) external view returns (uint256 amount);
 
     // function toShare(
     //     IERC20_ token,
