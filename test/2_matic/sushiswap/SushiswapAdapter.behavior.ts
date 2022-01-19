@@ -12,22 +12,23 @@ export function shouldBehaveLikeSushiswapAdapter(token: string, pool: PoolItem):
   it(`should deposit ${token} and withdraw f${token} in ${token} lending pair of Kashi - Sushiswap`, async function () {
     // Sushiswap's deposit vault instance
     const kashiLendingPairInstance = await hre.ethers.getContractAt("IKashiLendingPair", pool.vault);
+
+    //check whether the lending pair is empty
     const totalSupply = await kashiLendingPairInstance.totalSupply();
     if (totalSupply == 0) this.skip(); //skip vaults which are empty - it's not possible to get money out again fully (perhaps even skip small vaults?)
+    console.log("totalSupply");
+    console.log(utils.formatEther(totalSupply));
 
     let bentoboxAddress = "0x0319000133d3AdA02600f0875d2cf03D442C3367";
     const bentoBoxInstance = await hre.ethers.getContractAt("IBentoBoxV1", bentoboxAddress);
-    let wmatic_address = "0x0d500B1d8E8eF31E21C99d1Db9A6444d3ADf1270";
 
-    // Sushiswap receipt token decimals
-    // const decimals = await kashiLendingPairInstance.decimals();
-
-    const wantTokenAddress = pool.wantToken;
     // Sushiswap's underlying token instance
+    const wantTokenAddress = pool.wantToken;
     const underlyingTokenInstance = await hre.ethers.getContractAt("IERC20", wantTokenAddress);
 
     // fund TestDeFiAdapter with initialWantTokenBalance
-    //if wantToken is WMATIC, wrap MATIC into WMATIC
+    // if wantToken is WMATIC, wrap MATIC into WMATIC
+    let wmatic_address = "0x0d500B1d8E8eF31E21C99d1Db9A6444d3ADf1270";
     if (hre.ethers.utils.getAddress(wantTokenAddress) == hre.ethers.utils.getAddress(wmatic_address)) {
       console.log("want is wmatic");
       const wmatic_token = await hre.ethers.getContractAt("IWETH", wantTokenAddress);
@@ -65,9 +66,6 @@ export function shouldBehaveLikeSushiswapAdapter(token: string, pool: PoolItem):
     const tokenBalanceInTestAdapter = await underlyingTokenInstance.balanceOf(this.testDeFiAdapter.address);
     console.log("tokenBalanceInTestAdapter");
     console.log(hre.ethers.utils.formatEther(tokenBalanceInTestAdapter));
-
-    console.log("totalSupply");
-    console.log(hre.ethers.utils.formatEther(totalSupply));
 
     // 1. deposit all underlying tokens
     await this.testDeFiAdapter.testGetDepositAllCodes(

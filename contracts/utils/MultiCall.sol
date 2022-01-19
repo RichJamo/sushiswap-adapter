@@ -24,7 +24,6 @@ abstract contract MultiCall is IMultiCall {
     function executeCode(bytes memory _code, string memory _errorMsg) public override {
         (address _contract, bytes memory _data) = abi.decode(_code, (address, bytes));
         (bool _success, ) = _contract.call(_data); //solhint-disable-line avoid-low-level-calls
-        console.log("executing code");
         require(_success, _errorMsg);
     }
 

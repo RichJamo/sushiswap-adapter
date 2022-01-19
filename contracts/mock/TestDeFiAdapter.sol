@@ -5,7 +5,7 @@ pragma experimental ABIEncoderV2;
 
 import { ERC20 } from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import { IAdapterFull } from "@optyfi/defi-legos/interfaces/defiAdapters/contracts/IAdapterFull.sol";
-import "../utils/interfaces/IBentoBoxV1.sol";
+import { IBentoBoxV1 } from "@optyfi/defi-legos/polygon/sushiswap/contracts/IBentoBoxV1.sol";
 
 import { MultiCall } from "../utils/MultiCall.sol";
 import "hardhat/console.sol";

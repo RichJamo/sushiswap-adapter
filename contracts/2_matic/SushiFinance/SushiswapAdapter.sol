@@ -11,17 +11,16 @@ pragma experimental ABIEncoderV2;
 //  libraries
 import { SafeMath } from "@openzeppelin/contracts/math/SafeMath.sol";
 import "hardhat/console.sol";
-import { IERC20_ } from "../../utils/interfaces/IERC20_.sol";
+import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 //  interfaces
-//todo: check these first two - do I need Sushi equivalents?
 import { IKashiLendingPair } from "@optyfi/defi-legos/polygon/sushiswap/contracts/IKashiLendingPair.sol";
-import { IBentoBoxV1 } from "../../utils/interfaces/IBentoBoxV1.sol";
+import { IBentoBoxV1 } from "@optyfi/defi-legos/polygon/sushiswap/contracts/IBentoBoxV1.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { IAdapter } from "@optyfi/defi-legos/interfaces/defiAdapters/contracts/IAdapter.sol";
 import { IAdapterInvestLimit } from "@optyfi/defi-legos/interfaces/defiAdapters/contracts/IAdapterInvestLimit.sol";
-import { IAdapterHarvestReward } from "@optyfi/defi-legos/interfaces/defiAdapters/contracts/IAdapterHarvestReward.sol";
 import { IUniswapV2Router02 } from "@uniswap/v2-periphery/contracts/interfaces/IUniswapV2Router02.sol";
+import { IWETH } from "@optyfi/defi-legos/interfaces/misc/contracts/IWETH.sol"; //import for sake of test file
 
 /**
  * @title Adapter for Sushiswap protocol
@@ -31,7 +30,7 @@ import { IUniswapV2Router02 } from "@uniswap/v2-periphery/contracts/interfaces/I
 
 // enum MaxExposure { Number, Pct }
 
-contract SushiswapAdapter is IAdapter, IAdapterHarvestReward, IAdapterInvestLimit {
+contract SushiswapAdapter is IAdapter, IAdapterInvestLimit {
     using SafeMath for uint256;
 
     /**
@@ -48,13 +47,6 @@ contract SushiswapAdapter is IAdapter, IAdapterHarvestReward, IAdapterInvestLimi
 
     /** @notice Sushiswap's reward token address */
     address public constant rewardToken = address(0x76bF0C28e604CC3fE9967c83b3C3F31c213cfE64);
-
-    // uint8[] actionsArray;
-    // actionsArray[0] = uint8(24);
-    // uint256[] memory valuesArray;
-    // valuesArray[0] = 0;
-    // bytes[] memory datasArray;
-    // datasArray[0] = abi.encode(address(this), kashiMasterContract, true, 0, bytes32(0), bytes32(0));
 
     // /** @notice Named Constants for defining max exposure state */
     // enum MaxExposure { Number, Pct }
@@ -102,13 +94,14 @@ contract SushiswapAdapter is IAdapter, IAdapterHarvestReward, IAdapterInvestLimi
      * @inheritdoc IAdapter
      */
     function calculateAmountInLPToken(
-        address,
+        address _underlyingToken,
         address _liquidityPool,
         uint256 _depositAmount
     ) public view override returns (uint256) {
+        (uint128 totalAssetElastic, uint128 totalAssetBase) = IKashiLendingPair(_liquidityPool).totalAsset();
         return
-            _depositAmount.mul(10**IKashiLendingPair(_liquidityPool).decimals()).div(
-                IKashiLendingPair(_liquidityPool).getPricePerFullShare()
+            IBentoBoxV1(bentoBox).toShare(IERC20(_underlyingToken), _depositAmount, false).mul(totalAssetBase).div(
+                totalAssetElastic
             );
     }
 
@@ -138,32 +131,6 @@ contract SushiswapAdapter is IAdapter, IAdapterHarvestReward, IAdapterInvestLimi
     ) public view override returns (bool) {
         uint256 _balanceInToken = getAllAmountInToken(_vault, _underlyingToken, _liquidityPool);
         return _balanceInToken >= _redeemAmount;
-    }
-
-    /**
-     * @inheritdoc IAdapterHarvestReward
-     */
-    function getClaimRewardTokenCode(address payable, address _liquidityPool)
-        public
-        view
-        override
-        returns (bytes[] memory _codes)
-    {
-        address _stakingVault = address(0x76bF0C28e604CC3fE9967c83b3C3F31c213cfE64); //todo - change this!
-        _codes = new bytes[](1);
-        _codes[0] = abi.encode(_stakingVault, abi.encodeWithSignature("getReward()"));
-    }
-
-    /**
-     * @inheritdoc IAdapterHarvestReward
-     */
-    function getHarvestAllCodes(
-        address payable _vault,
-        address _underlyingToken,
-        address _liquidityPool
-    ) public view override returns (bytes[] memory _codes) {
-        uint256 _rewardTokenAmount = IERC20(getRewardToken(_liquidityPool)).balanceOf(_vault);
-        return getHarvestSomeCodes(_vault, _underlyingToken, _liquidityPool, _rewardTokenAmount);
     }
 
     /**
@@ -229,8 +196,8 @@ contract SushiswapAdapter is IAdapter, IAdapterHarvestReward, IAdapterInvestLimi
         valuesArray[1] = 0;
 
         bytes[] memory datasArray = new bytes[](2);
-        console.log(_shares); //.sub(10000)
-        datasArray[0] = abi.encode(int256(_shares), address(msg.sender)); //fraction, to; int256, address; returns share .sub(10000)
+        //fraction, to; int256, address; returns share
+        datasArray[0] = abi.encode(int256(_shares), address(msg.sender));
         //token, to, amount, share; IERC20, address, int256, int256
         datasArray[1] = abi.encode(IERC20(_underlyingToken), address(msg.sender), 0, int256(-1));
 
@@ -296,7 +263,7 @@ contract SushiswapAdapter is IAdapter, IAdapterHarvestReward, IAdapterInvestLimi
 
         if (_liquidityPoolTokenAmount > 0) {
             _liquidityPoolTokenAmount = IBentoBoxV1(bentoBox).toAmount(
-                IERC20_(_underlyingToken),
+                IERC20(_underlyingToken),
                 _liquidityPoolTokenAmount.mul(totalAssetElastic).div(totalAssetBase), //these three lines could be a PricePerFraction function?
                 false
             );
@@ -311,36 +278,7 @@ contract SushiswapAdapter is IAdapter, IAdapterHarvestReward, IAdapterInvestLimi
         return rewardToken;
     }
 
-    /**
-     * @inheritdoc IAdapterHarvestReward
-     */
-    function getUnclaimedRewardTokenAmount(
-        address payable _vault,
-        address _liquidityPool,
-        address
-    ) public view override returns (uint256) {
-        // return IHarvestFarm(liquidityPoolToStakingVault[_liquidityPool]).earned(_vault);
-        return 999;
-    }
-
-    /**
-     * @inheritdoc IAdapterHarvestReward
-     */
-    function getHarvestSomeCodes(
-        address payable _vault,
-        address _underlyingToken,
-        address _liquidityPool,
-        uint256 _rewardTokenAmount
-    ) public view override returns (bytes[] memory _codes) {
-        return _getHarvestCodes(_vault, getRewardToken(_liquidityPool), _underlyingToken, _rewardTokenAmount);
-    }
-
     /* solhint-disable no-empty-blocks */
-
-    /**
-     * @inheritdoc IAdapterHarvestReward
-     */
-    function getAddLiquidityCodes(address payable, address) public view override returns (bytes[] memory) {}
 
     /**
      * @notice Sets the absolute max deposit value in underlying for the given liquidity pool
