@@ -25,7 +25,6 @@ describe("Unit tests", function () {
     this.swapRouter = <IUniswapV2Router02>(
       await hre.ethers.getContractAt("IUniswapV2Router02", "0xa5E0829CaCEd8fFDD4De3c43696c57F7D7A678ff") //Quickswap router 0xa5...
     );
-    console.log("1");
     // deploy Sushiswap Adapter
     const sushiswapAdapterArtifact: Artifact = await hre.artifacts.readArtifact("SushiswapAdapter");
     this.sushiswapAdapter = <SushiswapAdapter>(
@@ -36,7 +35,6 @@ describe("Unit tests", function () {
         getOverrideOptions(),
       )
     );
-    console.log("2");
 
     // deploy TestDeFiAdapter Contract
     const testDeFiAdapterArtifact: Artifact = await hre.artifacts.readArtifact("TestDeFiAdapter");

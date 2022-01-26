@@ -4,7 +4,7 @@ import { ERC20 } from "../typechain";
 
 export function getOverrideOptions(): TransactionRequest {
   return {
-    // gasPrice: 1_000_000_00,
+    gasPrice: 1_000_000_00,
   };
 }
 
@@ -60,7 +60,6 @@ export async function setTokenBalanceInStorage(token: ERC20, account: string, am
           .padStart(64, "0"),
     );
   } else {
-    console.log(await token.decimals());
     return setStorageAt(
       token.address,
       ethers.utils.hexStripZeros(
