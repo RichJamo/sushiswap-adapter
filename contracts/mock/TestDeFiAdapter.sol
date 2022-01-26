@@ -1,11 +1,10 @@
 // SPDX-License-Identifier: MIT
 
-pragma solidity ^0.6.12;
-pragma experimental ABIEncoderV2;
+pragma solidity =0.8.11;
 
 import { ERC20 } from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import { IAdapterFull } from "@optyfi/defi-legos/interfaces/defiAdapters/contracts/IAdapterFull.sol";
-import { IBentoBoxV1 } from "@optyfi/defi-legos/polygon/sushiswap/contracts/IBentoBoxV1.sol";
+import { IBentoBoxV1 } from "contracts/utils/interfaces/IBentoBoxV1.sol";
 
 import { MultiCall } from "../utils/MultiCall.sol";
 import "hardhat/console.sol";

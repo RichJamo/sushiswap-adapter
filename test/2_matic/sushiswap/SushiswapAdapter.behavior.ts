@@ -4,7 +4,7 @@ import { solidity } from "ethereum-waffle";
 import { getAddress } from "ethers/lib/utils";
 import { BigNumber, utils } from "ethers";
 import { PoolItem } from "../types";
-import { getOverrideOptions } from "../../utils";
+import { getOverrideOptions, setTokenBalanceInStorage } from "../../utils";
 
 chai.use(solidity);
 
@@ -23,49 +23,54 @@ export function shouldBehaveLikeSushiswapAdapter(token: string, pool: PoolItem):
     const bentoBoxInstance = await hre.ethers.getContractAt("IBentoBoxV1", bentoboxAddress);
 
     // Sushiswap's underlying token instance
-    const wantTokenAddress = pool.wantToken;
-    const underlyingTokenInstance = await hre.ethers.getContractAt("IERC20", wantTokenAddress);
+    const underlyingTokenInstance = await hre.ethers.getContractAt("ERC20", pool.wantToken);
+    console.log("got here");
+
+    let underlyingDecimals = await underlyingTokenInstance.decimals();
+
+    await setTokenBalanceInStorage(underlyingTokenInstance, this.testDeFiAdapter.address, "2000");
+    console.log("got here next");
 
     // fund TestDeFiAdapter with initialWantTokenBalance
     // if wantToken is WMATIC, wrap MATIC into WMATIC
-    let wmatic_address = "0x0d500B1d8E8eF31E21C99d1Db9A6444d3ADf1270";
-    if (hre.ethers.utils.getAddress(wantTokenAddress) == hre.ethers.utils.getAddress(wmatic_address)) {
-      console.log("want is wmatic");
-      const wmatic_token = await hre.ethers.getContractAt("IWETH", wantTokenAddress);
-      await wmatic_token.deposit({ value: hre.ethers.utils.parseEther("50") });
-      console.log("swap into wmatic done");
-    } else {
-      //if wantToken is not WMATIC, swap from MATIC into wantToken
-      console.log("want is not wmatic");
-      try {
-        await this.swapRouter.swapExactETHForTokens(
-          0,
-          [wmatic_address, wantTokenAddress],
-          this.signers.admin.address,
-          Date.now() + 900,
-          { value: hre.ethers.utils.parseEther("50") },
-        );
-        console.log("Swap into single test asset done");
-      } catch (err) {
-        console.log("Swap into single test asset failed");
-        console.log(err);
-      }
-    }
+    // let wmatic_address = "0x0d500B1d8E8eF31E21C99d1Db9A6444d3ADf1270";
+    // if (hre.ethers.utils.getAddress(pool.wantToken) == hre.ethers.utils.getAddress(wmatic_address)) {
+    //   console.log("want is wmatic");
+    //   const wmatic_token = await hre.ethers.getContractAt("IWETH", pool.wantToken);
+    //   await wmatic_token.deposit({ value: hre.ethers.utils.parseEther("50") });
+    //   console.log("swap into wmatic done");
+    // } else {
+    //   //if wantToken is not WMATIC, swap from MATIC into wantToken
+    //   console.log("want is not wmatic");
+    //   try {
+    //     await this.swapRouter.swapExactETHForTokens(
+    //       0,
+    //       [wmatic_address, pool.wantToken],
+    //       this.signers.admin.address,
+    //       Date.now() + 900,
+    //       { value: hre.ethers.utils.parseEther("50") },
+    //     );
+    //     console.log("Swap into single test asset done");
+    //   } catch (err) {
+    //     console.log("Swap into single test asset failed");
+    //     console.log(err);
+    //   }
+    // }
 
     //get balance of wantToken
-    const initialWantTokenBalance = await underlyingTokenInstance.balanceOf(this.signers.admin.address);
-    console.log("initialWantTokenBalance");
-    console.log(hre.ethers.utils.formatEther(initialWantTokenBalance));
+    // const initialWantTokenBalance = await underlyingTokenInstance.balanceOf(this.signers.admin.address);
+    // console.log("initialWantTokenBalance");
+    // console.log(hre.ethers.utils.formatEther(initialWantTokenBalance));
 
     //transfer want to testDeFiAdapter
-    await underlyingTokenInstance.transfer(this.testDeFiAdapter.address, initialWantTokenBalance, getOverrideOptions());
-    const testDefiAdapterWantBalance = await underlyingTokenInstance.balanceOf(this.testDeFiAdapter.address);
-    console.log("testDefiAdapterWantBalance");
-    console.log(hre.ethers.utils.formatEther(testDefiAdapterWantBalance));
+    // await underlyingTokenInstance.transfer(this.testDeFiAdapter.address, initialWantTokenBalance, getOverrideOptions());
+    // const testDefiAdapterWantBalance = await underlyingTokenInstance.balanceOf(this.testDeFiAdapter.address);
+    // console.log("testDefiAdapterWantBalance");
+    // console.log(hre.ethers.utils.formatEther(testDefiAdapterWantBalance));
 
     const tokenBalanceInTestAdapter = await underlyingTokenInstance.balanceOf(this.testDeFiAdapter.address);
     console.log("tokenBalanceInTestAdapter");
-    console.log(hre.ethers.utils.formatEther(tokenBalanceInTestAdapter));
+    console.log(hre.ethers.utils.formatUnits(tokenBalanceInTestAdapter));
 
     // 1. deposit all underlying tokens
     await this.testDeFiAdapter.testGetDepositAllCodes(
@@ -94,13 +99,13 @@ export function shouldBehaveLikeSushiswapAdapter(token: string, pool: PoolItem):
       this.testDeFiAdapter.address,
     );
     // console.log("actualUnderlyingTokenBalanceAfterDeposit");
-    // console.log(hre.ethers.utils.formatEther(actualUnderlyingTokenBalanceAfterDeposit));
+    // console.log(hre.ethers.utils.formatUnits(actualUnderlyingTokenBalanceAfterDeposit, underlyingDecimals));
 
     const expectedUnderlyingTokenBalanceAfterDeposit = await underlyingTokenInstance.balanceOf(
       this.testDeFiAdapter.address,
     );
     console.log("expectedUnderlyingTokenBalanceAfterDeposit");
-    console.log(hre.ethers.utils.formatEther(expectedUnderlyingTokenBalanceAfterDeposit));
+    console.log(hre.ethers.utils.formatUnits(expectedUnderlyingTokenBalanceAfterDeposit, underlyingDecimals));
 
     expect(actualUnderlyingTokenBalanceAfterDeposit).to.be.eq(expectedUnderlyingTokenBalanceAfterDeposit);
 
@@ -111,7 +116,7 @@ export function shouldBehaveLikeSushiswapAdapter(token: string, pool: PoolItem):
       pool.vault,
     );
     console.log("actualAmountInTokenAfterDeposit");
-    console.log(hre.ethers.utils.formatEther(actualAmountInTokenAfterDeposit));
+    console.log(hre.ethers.utils.formatUnits(actualAmountInTokenAfterDeposit, underlyingDecimals));
 
     //to do - fix this line below - need to do
     let totalAsset = await kashiLendingPairInstance.totalAsset();
@@ -131,7 +136,7 @@ export function shouldBehaveLikeSushiswapAdapter(token: string, pool: PoolItem):
     );
 
     console.log("expectedAmountInTokenAfterDeposit");
-    console.log(hre.ethers.utils.formatEther(expectedAmountInTokenAfterDeposit));
+    console.log(hre.ethers.utils.formatUnits(expectedAmountInTokenAfterDeposit, underlyingDecimals));
 
     expect(actualAmountInTokenAfterDeposit).to.be.eq(expectedAmountInTokenAfterDeposit);
 
@@ -174,7 +179,7 @@ export function shouldBehaveLikeSushiswapAdapter(token: string, pool: PoolItem):
       this.testDeFiAdapter.address,
     );
     console.log("expectedUnderlyingTokenBalanceAfterWithdraw");
-    console.log(hre.ethers.utils.formatEther(expectedUnderlyingTokenBalanceAfterWithdraw));
+    console.log(hre.ethers.utils.formatUnits(expectedUnderlyingTokenBalanceAfterWithdraw, underlyingDecimals));
 
     expect(actualUnderlyingTokenBalanceAfterWithdraw).to.be.eq(expectedUnderlyingTokenBalanceAfterWithdraw);
   }).timeout(100000);
