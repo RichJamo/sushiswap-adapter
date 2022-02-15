@@ -173,10 +173,10 @@ contract SushiswapAdapter is IAdapter, IAdapterInvestLimit, AdapterModifiersBase
         valuesArray[1] = 0;
 
         bytes[] memory datasArray = new bytes[](2);
-        datasArray[0] = abi.encode(address(_underlyingToken), address(msg.sender), int256(_amount), int256(0));
+        datasArray[0] = abi.encode(address(_underlyingToken), address(msg.sender), int256(_depositAmount), int256(0));
         datasArray[1] = abi.encode(int256(-2), address(msg.sender), false); //skim is false - tokens come from bentobox
 
-        if (_amount > 0) {
+        if (_depositAmount > 0) {
             _codes = new bytes[](3);
             _codes[0] = abi.encode(
                 _underlyingToken,
@@ -184,7 +184,7 @@ contract SushiswapAdapter is IAdapter, IAdapterInvestLimit, AdapterModifiersBase
             );
             _codes[1] = abi.encode(
                 _underlyingToken,
-                abi.encodeWithSignature("approve(address,uint256)", bentoBox, _amount)
+                abi.encodeWithSignature("approve(address,uint256)", bentoBox, _depositAmount)
             );
             _codes[2] = abi.encode(
                 _liquidityPool,
